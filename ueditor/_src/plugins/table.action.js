@@ -76,8 +76,8 @@ UE.plugins['table'] = function () {
     me.setOpt({
         'maxColNum':20,
         'maxRowNum':100,
-        'defaultCols':5,
-        'defaultRows':5,
+        'defaultCols':3,
+        'defaultRows':3,
         'tdvalign':'top',
         'cursorpath':me.options.UEDITOR_HOME_URL + "themes/default/images/cursor_",
         'tableDragable':false,
@@ -175,6 +175,7 @@ UE.plugins['table'] = function () {
                 }
 
             }
+
             if (keyCode == 13) {
 
                 var rng = me.selection.getRange(),
@@ -232,6 +233,7 @@ UE.plugins['table'] = function () {
                 }
             }
         });
+
         me.addListener("tablehasdeleted",function(){
             toggleDraggableState(this, false, "", null);
             if (dragButton)domUtils.remove(dragButton);
@@ -391,9 +393,11 @@ UE.plugins['table'] = function () {
                 }
             })
         });
+
         me.addListener('blur', function () {
             tableCopyList = null;
         });
+
         var timer;
         me.addListener('keydown', function () {
             clearTimeout(timer);
@@ -409,6 +413,7 @@ UE.plugins['table'] = function () {
 
             }, 100);
         });
+
         me.addListener("selectionchange", function () {
             toggleDraggableState(me, false, "", null);
         });
@@ -419,7 +424,8 @@ UE.plugins['table'] = function () {
         me.addListener("contentchange", function () {
             var me = this;
             //尽可能排除一些不需要更新的状况
-            hideDragLine(me);
+            // lcyn6751: 注释下一句，处理拖动缩放单元格的问题
+            // hideDragLine(me);
             if (getUETableBySelected(me))return;
             var rng = me.selection.getRange();
             var start = rng.startContainer;
@@ -563,7 +569,7 @@ UE.plugins['table'] = function () {
         });
         me.addOutputRule(function(root){
             utils.each(root.getNodesByTagName('div'),function(n){
-                if (n.getAttr('id') == 'ue_tableDragLine') {
+                if (n.getAttr('id') === 'ue_tableDragLine') {
                     n.parentNode.removeChild(n);
                 }
             });
@@ -709,7 +715,6 @@ UE.plugins['table'] = function () {
             }
             return result;
         };
-
 
     });
     /**
