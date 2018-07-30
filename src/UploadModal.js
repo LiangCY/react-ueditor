@@ -271,7 +271,7 @@ class UploadModal extends React.Component {
           <Button key='close' onClick={this.closeModal}>取消</Button>,
           <Button key='insert' onClick={this.insert}>插入</Button>,
         ]}
-        animation='zome'
+        animation='zoom'
         maskAnimation='fade'>
         <div>
           <div>
