@@ -14,8 +14,11 @@ class App extends React.Component {
   }
 
   uploadImage = e => {
+    if (!e.target.files) return
     return new Promise(function(resolve, reject) {
-      resolve('https://avatars2.githubusercontent.com/u/3232724?v=8&s=120')
+      const reader = new FileReader()
+      reader.onload = e => resolve(e.target.result)
+      reader.readAsDataURL(e.target.files[0])
     })
   }
 
@@ -66,12 +69,10 @@ class App extends React.Component {
         <ReactUeditor
           getRef={this.getUeditor}
           ueditorPath='../vendor/ueditor'
-          config={{zIndex: 1001}}
+          config={{zIndex: 100}}
           value={this.editorResult}
-          plugins={['uploadImage', 'insertCode', 'uploadVideo', 'uploadAudio']}
+          plugins={['uploadImage']}
           uploadImage={this.uploadImage}
-          uploadVideo={this.uploadVideo}
-          uploadAudio={this.uploadAudio}
           onChange={this.updateEditorContent}
           progress={progress}
           multipleImagesUpload={false}

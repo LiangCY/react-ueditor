@@ -2,14 +2,6 @@ import PropTypes from 'prop-types'
 import React from 'react'
 import UploadModal from './UploadModal'
 
-const simpleInsertCodeIcon = 'data:img/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB9klEQVRYR+2Wy' +
-  '23CQBCGZxwUASdKgA7IIdIukhF0QCoI6YAS6CB0EDpIOgjCEbs3nApCB+EEKFI80ToYgR/7IEhIEb4hvPN/8/jHi3DmB8+sDxeA/1GBdosNi' +
-  'TAMhHhxnamTVMDnfAEAo0CI0ckBOs1mbRKGy6LArdZtswSl+VdEDSmlAtk9prPqRW0FfMb66OGjt1o3iiB8zgcAMAiEqKfFo0p5QQSDQMpxU' +
-  'QKFAFvxJ4roQRfA52yCgOFUCAVy8NjEyAWwOaiUVImjauWTCO6KBtAUKwNgOrCfos95DxGepzNh08rcah4cdBFXID5nY0CsBTPRM01/Uewdg' +
-  'Ku4EmxztiTAoa398jRigGPEdfbTVSOthUkfTdOeDrrdfv20/UytSCeMKhAQ3HvrzY1u4WQs1mIhEk7y7GeCiN1TKc8J8R3Vj+9qWXmZvNW6a' +
-  'wOR2C+KqPsm5cQkmFlQ1corAeHVatOJZ8AVIu4jwmgqZO0v4irZnQtcIFzslwBuq7bLPKn0wR6whYjtZ9jxurLvtzmzwUwQrvYryjwBzF2hO' +
-  'ojYfgC9YCabpv6bxLWf4yII39J+NuLG+8BvkPJgOpND9TJjrH7t4Yet/VS1vNVmpLO205XsWPvpWuUGoD6/AJ1jtp/zjcg0YKf636kCpxLdj' +
-  '3MBOHsFfgBLLaBN8r49lAAAAABJRU5ErkJggg=='
 const uploadAudio = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACBUlEQVRYR+1VwXHbMBC8' +
   'qyBxBXI6cCqwUkEOFUSuIHYFliuwUoGVCrAdWOlA6UCuIOpgPashNRQIOtJkHH2ID2eIA25vD7vndublZ85vI4CRgZGBkxmIiI9mdm9mMzNb' +
   'AHgYknJEzM3sA4C7oZiTAEREmNmTuwvEi5lNSH4GsK4liIiFu38nuQRwU4s5CkBTtRILwAvJWzPbuvszyS8AVhFxZWbXAH50E0XE0t2/kbwB' +
@@ -54,9 +46,8 @@ class ReactUeditor extends React.Component {
   componentDidMount() {
     let {ueditorPath} = this.props
     if (!window.UE && !window.UE_LOADING_PROMISE) {
-      window.UE_LOADING_PROMISE = this.createScript(ueditorPath + '/ueditor.config.js').then(() => {
-        return this.createScript(ueditorPath + '/ueditor.all.min.js')
-      })
+      window.UE_LOADING_PROMISE = this.createScript(ueditorPath + '/ueditor.config.js')
+        .then(() => this.createScript(ueditorPath + '/ueditor.all.js'))
     }
     window.UE_LOADING_PROMISE.then(() => {
       this.tempfileInput = document.getElementById(this.fileInputID)
@@ -94,7 +85,7 @@ class ReactUeditor extends React.Component {
     let _url = location.origin + url
     return new Promise((resolve, reject) => {
       for (i = 0; i < len; i++) {
-        var src = scriptTags[i].src
+        let src = scriptTags[i].src
         if (src && src === _url) {
           scriptTags[i].parentElement.removeChild(scriptTags[i])
         }
@@ -103,6 +94,7 @@ class ReactUeditor extends React.Component {
       let node = document.createElement('script')
       node.src = url
       node.onload = resolve
+      node.onerror = reject
       document.body.appendChild(node)
     })
   }
@@ -110,40 +102,20 @@ class ReactUeditor extends React.Component {
   // uditor 自定义按钮的方式
   registerImageUpload = () => {
     window.UE.registerUI('imageUpload', (editor, uiName) => {
-      var btn = new window.UE.ui.Button({
+      return new window.UE.ui.Button({
         name: uiName,
-        title: '文件上传',
+        title: '上传图片',
         cssRules: 'background-position: -726px -77px;',
         onclick: () => {
           editor._react_ref.tempfileInput.click()
         },
       })
-
-      return btn
-    })
-  }
-
-  registerSimpleInsertCode() {
-    window.UE.registerUI('simpleInsertCode', (editor, uiName) => {
-      var btn = new window.UE.ui.Button({
-        name: uiName,
-        title: '插入代码',
-        cssRules: 'background: url(' + simpleInsertCodeIcon + ') !important; background-size: 20px 20px !important;',
-        onclick() {
-          if (editor) {
-            editor.focus()
-            editor.execCommand('insertcode')
-          }
-        },
-      })
-
-      return btn
     })
   }
 
   registerUploadVideo = () => {
     window.UE.registerUI('videoUpload', (editor, uiName) => {
-      var btn = new window.UE.ui.Button({
+      return new window.UE.ui.Button({
         name: uiName,
         title: '上传视频',
         cssRules: 'background-position: -320px -20px;',
@@ -151,14 +123,12 @@ class ReactUeditor extends React.Component {
           editor._react_ref.setState({videoModalVisible: true})
         },
       })
-
-      return btn
     })
   }
 
   registerUploadAudio = () => {
     window.UE.registerUI('audioUpload', (editor, uiName) => {
-      var btn = new window.UE.ui.Button({
+      return new window.UE.ui.Button({
         name: uiName,
         title: '上传音频',
         cssRules: 'background: url(' + uploadAudio + ') !important; background-size: 20px 20px !important;',
@@ -166,8 +136,6 @@ class ReactUeditor extends React.Component {
           editor._react_ref.setState({audioModalVisible: true})
         },
       })
-
-      return btn
     })
   }
 
@@ -223,7 +191,6 @@ class ReactUeditor extends React.Component {
     this.ueditor._react_ref = this
     if (plugins && plugins instanceof Array && plugins.length > 0) {
       if (plugins.indexOf('uploadImage') !== -1) this.registerImageUpload()
-      if (plugins.indexOf('insertCode') !== -1) this.registerSimpleInsertCode()
       if (plugins.indexOf('uploadVideo') !== -1) this.registerUploadVideo()
       if (plugins.indexOf('uploadAudio') !== -1) this.registerUploadAudio()
     }
@@ -256,8 +223,9 @@ class ReactUeditor extends React.Component {
     let {uploadVideo, uploadAudio, multipleImagesUpload, progress} = this.props
     return (
       <div>
-        <script id={this.containerID} name={this.containerID} type='text/plain' />
-        <input type='file'
+        <script id={this.containerID} type='text/plain' />
+        <input
+          type='file'
           id={this.fileInputID}
           onChange={this.uploadImage}
           style={{visibility: 'hidden'}}
@@ -266,9 +234,7 @@ class ReactUeditor extends React.Component {
           type='video'
           title='上传视频'
           visible={videoModalVisible}
-          closeModal={() => {
-            this.closeModal('video')
-          }}
+          closeModal={() => this.closeModal('video')}
           insert={this.insert}
           upload={uploadVideo}
           progress={progress} />
@@ -276,9 +242,7 @@ class ReactUeditor extends React.Component {
           type='audio'
           title='上传音频'
           visible={audioModalVisible}
-          closeModal={() => {
-            this.closeModal('audio')
-          }}
+          closeModal={() => this.closeModal('audio')}
           insert={this.insert}
           upload={uploadAudio}
           progress={progress} />

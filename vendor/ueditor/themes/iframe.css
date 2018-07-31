@@ -1,1 +1,7 @@
 /*可以在这里添加你自己的css*/
+
+blockquote {
+    border-left: 4px solid #ccc;
+    margin: 4px 0;
+    padding: 0 0 0 16px;
+}
