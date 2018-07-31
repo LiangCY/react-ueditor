@@ -202,7 +202,6 @@ class ReactUeditor extends React.Component {
           this.isContentChangedByWillReceiveProps = false
         } else {
           this.content = this.ueditor.getContent()
-
           if (onChange) {
             onChange(this.ueditor.getContent())
           }

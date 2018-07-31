@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactUeditor from '../src'
+import Viewer from '../src/Viewer'
 
 class App extends React.Component {
   constructor() {
@@ -52,7 +53,6 @@ class App extends React.Component {
 
   getUeditor = ref => {
     this.ueditor = ref
-    console.log('ueditor', ref)
   }
 
   getUeditorContent = ref => {
@@ -63,22 +63,22 @@ class App extends React.Component {
 
   render() {
     let {content, progress} = this.state
-
     return (
       <div>
         <ReactUeditor
           getRef={this.getUeditor}
           ueditorPath='../vendor/ueditor'
           config={{zIndex: 100}}
-          value={this.editorResult}
           plugins={['uploadImage']}
           uploadImage={this.uploadImage}
-          onChange={this.updateEditorContent}
           progress={progress}
           multipleImagesUpload={false}
+          value={this.editorResult}
+          onChange={this.updateEditorContent}
         />
         <button onClick={this.getUeditorContent}>获取内容</button>
         <p>{content}</p>
+        <Viewer ueditorPath='../vendor/ueditor' content={content} />
       </div>
     )
   }
