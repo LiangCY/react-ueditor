@@ -1,7 +1,7 @@
 /*!
  * UEditor
  * version: ueditor
- * build: Tue Jul 31 2018 15:42:00 GMT+0800 (中国标准时间)
+ * build: Wed Aug 01 2018 10:43:54 GMT+0800 (中国标准时间)
  */
 
 (function(){
@@ -12668,7 +12668,7 @@ UE.plugins['paragraph'] = function() {
                         } );
                     }
                     tmpRange.setEndAfter( tmpNode );
-                    
+
                     para = range.document.createElement( style );
                     if(attrs){
                         domUtils.setAttributes(para,attrs);
@@ -12680,7 +12680,7 @@ UE.plugins['paragraph'] = function() {
                     //需要内容占位
                     if(domUtils.isEmptyNode(para)){
                         domUtils.fillChar(range.document,para);
-                        
+
                     }
 
                     tmpRange.insertNode( para );
@@ -12804,7 +12804,7 @@ UE.plugins['paragraph'] = function() {
 
         },
         doDirectionality = function(range,editor,forward){
-            
+
             var bookmark,
                 filterFn = function( node ) {
                     return   node.nodeType == 1 ? !domUtils.isBookmarkNode(node) : !domUtils.isWhitespace(node);
@@ -22731,7 +22731,7 @@ UE.plugins['formatmatch'] = function(){
      });
 
     function addList(type,evt){
-        
+
         if(browser.webkit){
             var target = evt.target.tagName == 'IMG' ? evt.target : null;
         }
@@ -22797,7 +22797,7 @@ UE.plugins['formatmatch'] = function(){
 
     me.commands['formatmatch'] = {
         execCommand : function( cmdName ) {
-          
+
             if(flag){
                 flag = 0;
                 list = [];
@@ -22806,7 +22806,7 @@ UE.plugins['formatmatch'] = function(){
             }
 
 
-              
+
             var range = me.selection.getRange();
             img = range.getClosedNode();
             if(!img || img.tagName != 'IMG'){
@@ -23745,105 +23745,110 @@ UE.plugin.register('autoupload', function (){
 
     function sendAndInsertFile(file, editor) {
         var me  = editor;
+
+        // lcyn6751: 图片拖动和粘贴处理
+        if (!/image/.test(file.type)) return;
+        me.fireEvent('pasteImage', file);
+
         //模拟数据
-        var fieldName, urlPrefix, maxSize, allowFiles, actionUrl,
-            loadingHtml, errorHandler, successHandler,
-            filetype = /image\/\w+/i.test(file.type) ? 'image':'file',
-            loadingId = 'loading_' + (+new Date()).toString(36);
-
-        fieldName = me.getOpt(filetype + 'FieldName');
-        urlPrefix = me.getOpt(filetype + 'UrlPrefix');
-        maxSize = me.getOpt(filetype + 'MaxSize');
-        allowFiles = me.getOpt(filetype + 'AllowFiles');
-        actionUrl = me.getActionUrl(me.getOpt(filetype + 'ActionName'));
-        errorHandler = function(title) {
-            var loader = me.document.getElementById(loadingId);
-            loader && domUtils.remove(loader);
-            me.fireEvent('showmessage', {
-                'id': loadingId,
-                'content': title,
-                'type': 'error',
-                'timeout': 4000
-            });
-        };
-
-        if (filetype == 'image') {
-            loadingHtml = '<img class="loadingclass" id="' + loadingId + '" src="' +
-                me.options.themePath + me.options.theme +
-                '/images/spacer.gif" title="' + (me.getLang('autoupload.loading') || '') + '" >';
-            successHandler = function(data) {
-                var link = urlPrefix + data.url,
-                    loader = me.document.getElementById(loadingId);
-                if (loader) {
-                    loader.setAttribute('src', link);
-                    loader.setAttribute('_src', link);
-                    loader.setAttribute('title', data.title || '');
-                    loader.setAttribute('alt', data.original || '');
-                    loader.removeAttribute('id');
-                    domUtils.removeClasses(loader, 'loadingclass');
-                }
-            };
-        } else {
-            loadingHtml = '<p>' +
-                '<img class="loadingclass" id="' + loadingId + '" src="' +
-                me.options.themePath + me.options.theme +
-                '/images/spacer.gif" title="' + (me.getLang('autoupload.loading') || '') + '" >' +
-                '</p>';
-            successHandler = function(data) {
-                var link = urlPrefix + data.url,
-                    loader = me.document.getElementById(loadingId);
-
-                var rng = me.selection.getRange(),
-                    bk = rng.createBookmark();
-                rng.selectNode(loader).select();
-                me.execCommand('insertfile', {'url': link});
-                rng.moveToBookmark(bk).select();
-            };
-        }
-
-        /* 插入loading的占位符 */
-        me.execCommand('inserthtml', loadingHtml);
-
-        /* 判断后端配置是否没有加载成功 */
-        if (!me.getOpt(filetype + 'ActionName')) {
-            errorHandler(me.getLang('autoupload.errorLoadConfig'));
-            return;
-        }
-        /* 判断文件大小是否超出限制 */
-        if(file.size > maxSize) {
-            errorHandler(me.getLang('autoupload.exceedSizeError'));
-            return;
-        }
-        /* 判断文件格式是否超出允许 */
-        var fileext = file.name ? file.name.substr(file.name.lastIndexOf('.')):'';
-        if ((fileext && filetype != 'image') || (allowFiles && (allowFiles.join('') + '.').indexOf(fileext.toLowerCase() + '.') == -1)) {
-            errorHandler(me.getLang('autoupload.exceedTypeError'));
-            return;
-        }
-
-        /* 创建Ajax并提交 */
-        var xhr = new XMLHttpRequest(),
-            fd = new FormData(),
-            params = utils.serializeParam(me.queryCommandValue('serverparam')) || '',
-            url = utils.formatUrl(actionUrl + (actionUrl.indexOf('?') == -1 ? '?':'&') + params);
-
-        fd.append(fieldName, file, file.name || ('blob.' + file.type.substr('image/'.length)));
-        fd.append('type', 'ajax');
-        xhr.open("post", url, true);
-        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        xhr.addEventListener('load', function (e) {
-            try{
-                var json = (new Function("return " + utils.trim(e.target.response)))();
-                if (json.state == 'SUCCESS' && json.url) {
-                    successHandler(json);
-                } else {
-                    errorHandler(json.state);
-                }
-            }catch(er){
-                errorHandler(me.getLang('autoupload.loadError'));
-            }
-        });
-        xhr.send(fd);
+        // var fieldName, urlPrefix, maxSize, allowFiles, actionUrl,
+        //     loadingHtml, errorHandler, successHandler,
+        //     filetype = /image\/\w+/i.test(file.type) ? 'image':'file',
+        //     loadingId = 'loading_' + (+new Date()).toString(36);
+        //
+        // fieldName = me.getOpt(filetype + 'FieldName');
+        // urlPrefix = me.getOpt(filetype + 'UrlPrefix');
+        // maxSize = me.getOpt(filetype + 'MaxSize');
+        // allowFiles = me.getOpt(filetype + 'AllowFiles');
+        // actionUrl = me.getActionUrl(me.getOpt(filetype + 'ActionName'));
+        // errorHandler = function(title) {
+        //     var loader = me.document.getElementById(loadingId);
+        //     loader && domUtils.remove(loader);
+        //     me.fireEvent('showmessage', {
+        //         'id': loadingId,
+        //         'content': title,
+        //         'type': 'error',
+        //         'timeout': 4000
+        //     });
+        // };
+        //
+        // if (filetype == 'image') {
+        //     loadingHtml = '<img class="loadingclass" id="' + loadingId + '" src="' +
+        //         me.options.themePath + me.options.theme +
+        //         '/images/spacer.gif" title="' + (me.getLang('autoupload.loading') || '') + '" >';
+        //     successHandler = function(data) {
+        //         var link = urlPrefix + data.url,
+        //             loader = me.document.getElementById(loadingId);
+        //         if (loader) {
+        //             loader.setAttribute('src', link);
+        //             loader.setAttribute('_src', link);
+        //             loader.setAttribute('title', data.title || '');
+        //             loader.setAttribute('alt', data.original || '');
+        //             loader.removeAttribute('id');
+        //             domUtils.removeClasses(loader, 'loadingclass');
+        //         }
+        //     };
+        // } else {
+        //     loadingHtml = '<p>' +
+        //         '<img class="loadingclass" id="' + loadingId + '" src="' +
+        //         me.options.themePath + me.options.theme +
+        //         '/images/spacer.gif" title="' + (me.getLang('autoupload.loading') || '') + '" >' +
+        //         '</p>';
+        //     successHandler = function(data) {
+        //         var link = urlPrefix + data.url,
+        //             loader = me.document.getElementById(loadingId);
+        //
+        //         var rng = me.selection.getRange(),
+        //             bk = rng.createBookmark();
+        //         rng.selectNode(loader).select();
+        //         me.execCommand('insertfile', {'url': link});
+        //         rng.moveToBookmark(bk).select();
+        //     };
+        // }
+        //
+        // /* 插入loading的占位符 */
+        // me.execCommand('inserthtml', loadingHtml);
+        //
+        // /* 判断后端配置是否没有加载成功 */
+        // if (!me.getOpt(filetype + 'ActionName')) {
+        //     errorHandler(me.getLang('autoupload.errorLoadConfig'));
+        //     return;
+        // }
+        // /* 判断文件大小是否超出限制 */
+        // if(file.size > maxSize) {
+        //     errorHandler(me.getLang('autoupload.exceedSizeError'));
+        //     return;
+        // }
+        // /* 判断文件格式是否超出允许 */
+        // var fileext = file.name ? file.name.substr(file.name.lastIndexOf('.')):'';
+        // if ((fileext && filetype != 'image') || (allowFiles && (allowFiles.join('') + '.').indexOf(fileext.toLowerCase() + '.') == -1)) {
+        //     errorHandler(me.getLang('autoupload.exceedTypeError'));
+        //     return;
+        // }
+        //
+        // /* 创建Ajax并提交 */
+        // var xhr = new XMLHttpRequest(),
+        //     fd = new FormData(),
+        //     params = utils.serializeParam(me.queryCommandValue('serverparam')) || '',
+        //     url = utils.formatUrl(actionUrl + (actionUrl.indexOf('?') == -1 ? '?':'&') + params);
+        //
+        // fd.append(fieldName, file, file.name || ('blob.' + file.type.substr('image/'.length)));
+        // fd.append('type', 'ajax');
+        // xhr.open("post", url, true);
+        // xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        // xhr.addEventListener('load', function (e) {
+        //     try{
+        //         var json = (new Function("return " + utils.trim(e.target.response)))();
+        //         if (json.state == 'SUCCESS' && json.url) {
+        //             successHandler(json);
+        //         } else {
+        //             errorHandler(json.state);
+        //         }
+        //     }catch(er){
+        //         errorHandler(me.getLang('autoupload.loadError'));
+        //     }
+        // });
+        // xhr.send(fd);
     }
 
     function getPasteImage(e){
@@ -25279,7 +25284,7 @@ UE.ui = baidu.editor.ui = {};
         domUtils = baidu.editor.dom.domUtils,
         UIBase = baidu.editor.ui.UIBase,
         uiUtils = baidu.editor.ui.uiUtils;
-    
+
     var Mask = baidu.editor.ui.Mask = function (options){
         this.initOptions(options);
         this.initUIBase();
@@ -25575,7 +25580,7 @@ UE.ui = baidu.editor.ui = {};
         }
     };
     utils.inherits(Popup, UIBase);
-    
+
     domUtils.on( document, 'mousedown', function ( evt ) {
         var el = evt.target || evt.srcElement;
         closeAllPopup( evt,el );
@@ -25671,7 +25676,7 @@ UE.ui = baidu.editor.ui = {};
     var utils = baidu.editor.utils,
         uiUtils = baidu.editor.ui.uiUtils,
         UIBase = baidu.editor.ui.UIBase;
-    
+
     var TablePicker = baidu.editor.ui.TablePicker = function (options){
         this.initOptions(options);
         this.initTablePicker();
@@ -25755,7 +25760,7 @@ UE.ui = baidu.editor.ui = {};
     var browser = baidu.editor.browser,
         domUtils = baidu.editor.dom.domUtils,
         uiUtils = baidu.editor.ui.uiUtils;
-    
+
     var TPL_STATEFUL = 'onmousedown="$$.Stateful_onMouseDown(event, this);"' +
         ' onmouseup="$$.Stateful_onMouseUp(event, this);"' +
         ( browser.ie ? (
@@ -25764,7 +25769,7 @@ UE.ui = baidu.editor.ui = {};
         : (
         ' onmouseover="$$.Stateful_onMouseOver(event, this);"' +
         ' onmouseout="$$.Stateful_onMouseOut(event, this);"' ));
-    
+
     baidu.editor.ui.Stateful = {
         alwalysHoverable: false,
         target:null,//目标元素和this指向dom不一样
@@ -27389,7 +27394,7 @@ UE.ui = baidu.editor.ui = {};
         setValue : function(value){
             this._value = value;
         }
-        
+
     };
     utils.inherits(MenuButton, SplitButton);
 })();

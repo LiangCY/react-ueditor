@@ -14,12 +14,11 @@ class App extends React.Component {
     content: '',
   }
 
-  uploadImage = e => {
-    if (!e.target.files) return
+  uploadImage = file => {
     return new Promise(function(resolve, reject) {
       const reader = new FileReader()
       reader.onload = e => resolve(e.target.result)
-      reader.readAsDataURL(e.target.files[0])
+      reader.readAsDataURL(file)
     })
   }
 
@@ -72,7 +71,6 @@ class App extends React.Component {
           plugins={['uploadImage']}
           uploadImage={this.uploadImage}
           progress={progress}
-          multipleImagesUpload={false}
           value={this.editorResult}
           onChange={this.updateEditorContent}
         />

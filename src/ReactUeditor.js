@@ -36,11 +36,6 @@ class ReactUeditor extends React.Component {
     onChange: PropTypes.func,
     uploadImage: PropTypes.func,
     getRef: PropTypes.func,
-    multipleImagesUpload: PropTypes.bool,
-  }
-
-  static defaultProps = {
-    multipleImagesUpload: false,
   }
 
   componentDidMount() {
@@ -99,7 +94,41 @@ class ReactUeditor extends React.Component {
     })
   }
 
-  // uditor 自定义按钮的方式
+  initEditor = () => {
+    const {config, plugins, onChange, value, getRef} = this.props
+    this.ueditor = config ? window.UE.getEditor(this.containerID, config) : window.UE.getEditor(this.containerID)
+    this.ueditor._react_ref = this
+    if (plugins && plugins instanceof Array && plugins.length > 0) {
+      if (plugins.indexOf('uploadImage') !== -1) this.registerImageUpload()
+      if (plugins.indexOf('uploadVideo') !== -1) this.registerUploadVideo()
+      if (plugins.indexOf('uploadAudio') !== -1) this.registerUploadAudio()
+    }
+    getRef && getRef(this.ueditor)
+    this.ueditor.ready(() => {
+      this.ueditor.addListener('contentChange', () => {
+        // 由 componentWillReceiveProps 导致的 contentChange 不需要通知父组件
+        if (this.isContentChangedByWillReceiveProps) {
+          this.isContentChangedByWillReceiveProps = false
+        } else {
+          this.content = this.ueditor.getContent()
+          if (onChange) {
+            onChange(this.ueditor.getContent())
+          }
+        }
+      })
+      this.ueditor.addListener('pasteImage', (type, file) => {
+        this.uploadImage(file)
+      })
+
+      if (this.isContentChangedByWillReceiveProps) {
+        this.isContentChangedByWillReceiveProps = false
+        this.ueditor.setContent(this.content)
+      } else {
+        this.ueditor.setContent(value)
+      }
+    })
+  }
+
   registerImageUpload = () => {
     window.UE.registerUI('imageUpload', (editor, uiName) => {
       return new window.UE.ui.Button({
@@ -139,19 +168,19 @@ class ReactUeditor extends React.Component {
     })
   }
 
-  uploadImage = e => {
+  handleFileChange = e => {
+    const file = e.target.files[0]
+    if (!file || !/image/i.test(file.type)) return
+    this.uploadImage(file)
+  }
+
+  uploadImage = file => {
     let {uploadImage} = this.props
     if (uploadImage) {
-      let promise = uploadImage(e)
-      if (!!promise && typeof promise.then == 'function') {
+      let promise = uploadImage(file)
+      if (!!promise && {}.toString.call(promise.then) === '[object Function]') {
         promise.then(imageUrl => {
-          if (imageUrl instanceof Array) {
-            imageUrl.forEach(url => {
-              this.insertImage(url)
-            })
-          } else {
-            this.insertImage(imageUrl)
-          }
+          this.insertImage(imageUrl)
         })
       }
     }
@@ -185,50 +214,17 @@ class ReactUeditor extends React.Component {
     }
   }
 
-  initEditor = () => {
-    const {config, plugins, onChange, value, getRef} = this.props
-    this.ueditor = config ? window.UE.getEditor(this.containerID, config) : window.UE.getEditor(this.containerID)
-    this.ueditor._react_ref = this
-    if (plugins && plugins instanceof Array && plugins.length > 0) {
-      if (plugins.indexOf('uploadImage') !== -1) this.registerImageUpload()
-      if (plugins.indexOf('uploadVideo') !== -1) this.registerUploadVideo()
-      if (plugins.indexOf('uploadAudio') !== -1) this.registerUploadAudio()
-    }
-    getRef && getRef(this.ueditor)
-    this.ueditor.ready(() => {
-      this.ueditor.addListener('contentChange', () => {
-        // 由 componentWillReceiveProps 导致的 contentChange 不需要通知父组件
-        if (this.isContentChangedByWillReceiveProps) {
-          this.isContentChangedByWillReceiveProps = false
-        } else {
-          this.content = this.ueditor.getContent()
-          if (onChange) {
-            onChange(this.ueditor.getContent())
-          }
-        }
-      })
-
-      if (this.isContentChangedByWillReceiveProps) {
-        this.isContentChangedByWillReceiveProps = false
-        this.ueditor.setContent(this.content)
-      } else {
-        this.ueditor.setContent(value)
-      }
-    })
-  }
-
   render() {
     let {videoModalVisible, audioModalVisible} = this.state
-    let {uploadVideo, uploadAudio, multipleImagesUpload, progress} = this.props
+    let {uploadVideo, uploadAudio, progress} = this.props
     return (
       <div>
         <script id={this.containerID} type='text/plain' />
         <input
           type='file'
           id={this.fileInputID}
-          onChange={this.uploadImage}
-          style={{visibility: 'hidden'}}
-          multiple={multipleImagesUpload} />
+          onChange={this.handleFileChange}
+          style={{visibility: 'hidden'}} />
         <UploadModal
           type='video'
           title='上传视频'
