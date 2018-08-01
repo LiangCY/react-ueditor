@@ -1,7 +1,7 @@
 /*!
  * UEditor
  * version: ueditor
- * build: Wed Aug 01 2018 14:26:51 GMT+0800 (中国标准时间)
+ * build: Wed Aug 01 2018 14:42:18 GMT+0800 (中国标准时间)
  */
 
 (function(){
@@ -13373,7 +13373,9 @@ UE.plugins['insertcode'] = function() {
                if(n.type == 'text'){
                    //在ie下文本内容有可能末尾带有\n要去掉
                    //trace:3396
-                   code += n.data.replace(/[ ]/g,'&nbsp;').replace(/\n$/,'');
+                   // code += n.data.replace(/[ ]/g,'&nbsp;').replace(/\n$/,'');
+                   // lcyn6751: 代码块输出格式调整
+                   code += n.data.replace(/\n$/,'');
                }else{
                    if(n.tagName == 'br'){
                        code  += '\n'
